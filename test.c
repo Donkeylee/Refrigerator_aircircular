@@ -20,6 +20,10 @@
 #define READ_PS      0xB4
 #define UART_BUF_SIZE 16
 
+#define MIN(X, Y)				((X) > (Y) ? (Y) : (X))
+#define MAX(X, Y)				((X) > (Y) ? (X) : (Y))
+
+
 typedef	unsigned char		UINT8;
 typedef	unsigned int		UINT16;
 typedef	unsigned long		UINT32;
@@ -122,8 +126,8 @@ UINT16 read_scratchpad (UINT16 port)
 	int i;
 	if (reset(port))
 	{
-		write_byte(0xCC);
-		write_byte(0x44);
+		write_byte(0xCC, port);
+		write_byte(0x44, port);
 		wait_ready(port);
 		if (reset(port))
 		{
@@ -236,9 +240,13 @@ void take_over(char recived_data)
 			PRINTF("\r\n5. ");
 			PRINTF("\r\n6. ");			
 		}
-		else if(strstr(buffer, "t") != 0)		
+		else if(strstr(buffer, "t0") != 0)
 		{
-			PRINTF("temperature = %d\r\n", read_scratchpad()/2);
+			PRINTF("temperature = %d\r\n", read_scratchpad(0)/2);
+		}
+		else if(strstr(buffer, "t1") != 0)
+		{
+			PRINTF("temperature = %d\r\n", read_scratchpad(1)/2);
 		}
 		else if(strstr(buffer, "portd status") != 0)
 		{
@@ -282,36 +290,54 @@ SIGNAL(SIG_USART_RECV)
 
 int main(void)
 {
+	UINT16 temperature_raw_0;
+	UINT16 temperature_raw_1;
+	UINT16 temp_gap;
 
 
 	Init_System();
 	while(1)
 	{
-		int temperature_raw;
-		float temperature;
-		int target_temp = 43;
+
 		
-		temperature_raw = read_scratchpad();
+		temperature_raw_0 = read_scratchpad(0);
+		temperature_raw_1 = read_scratchpad(1);
 
-		if(temperature_raw % 2 == 0)
-		{
-			PRINTF("current temp / target temp = %4d.0 / %4d.0 (heater status = %s)\r\n", temperature_raw/2, target_temp, (PORTD >> 2) & 1 ? "ON" : "OFF");
-		}
-		else
-		{
-			PRINTF("current temp / target temp = %4d.5 / %4d.5 (heater status = %s)\r\n", temperature_raw/2, target_temp, (PORTD >> 2) & 1 ? "ON" : "OFF");
-		}
+		PRINTF("Temp0 : %u / Temp1 : %u\r\n", temperature_raw_0, temperature_raw_1);
 
-		if(temperature_raw > (target_temp * 2))
+		//NG
+		//- temperature should be very big number
+		temp_gap = (MAX(temperature_raw_0, temperature_raw_1) - MIN(temperature_raw_0, temperature_raw_1));
+
+		switch(temp_gap)			
 		{
-			PORTD = PORTD & ~((1 << 2) & 0xF);
-			PORTD = PORTD & ~((1 << 3) & 0xF);
+			case 0:
+			break;
+
+			case 1:
+			break;
+
+			case 2:
+			break;
+
+			case 3:
+			break;
+			
+			case 4:
+			break;
+
+			case 5:
+			break;
+
+			default:
+			break;
+			
 		}
-		else if(temperature_raw < (target_temp * 2))
-		{
-			PORTD = PORTD | ((1 << 2) & 0xF);
-			PORTD = PORTD | ((1 << 3) & 0xF);
-		}
+		
+			
+
+
+
 	}
 }
 
