@@ -312,24 +312,44 @@ int main(void)
 		switch(temp_gap)			
 		{
 			case 0:
+				//do nothing
 			break;
 
 			case 1:
+				//do nothing
 			break;
 
 			case 2:
+				//PWM 15%
 			break;
 
 			case 3:
+				//PWM 25%
 			break;
 			
 			case 4:
+				//PWM 35%
 			break;
 
 			case 5:
+				//PWM 45%
+			break;
+			
+			case 6:
+				//PWM 55%
+			break;
+			
+			case 7:
+				//PWM 65%
 			break;
 
+			case 8:
+				//PWM 70%
+			break;
+
+
 			default:
+				//PWM 75%
 			break;
 			
 		}
