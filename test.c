@@ -298,8 +298,8 @@ SIGNAL(SIG_USART_RECV)
 
 int main(void)
 {
-	UINT16 temperature_raw_0;
-	UINT16 temperature_raw_1;
+	int temperature_raw_0;
+	int temperature_raw_1;
 	UINT16 temp_gap;
 
 
@@ -308,17 +308,24 @@ int main(void)
 	{
 
 		
-		//temperature_raw_0 = read_scratchpad(0);
-		//temperature_raw_1 = read_scratchpad(1);
+		temperature_raw_0 = read_scratchpad(0);
+		temperature_raw_1 = read_scratchpad(1);
 
 		//PRINTF("Temp0 : %u / Temp1 : %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
-		//NG
-		//- temperature should be very big number
-		//temp_gap = (MAX(temperature_raw_0, temperature_raw_1) - MIN(temperature_raw_0, temperature_raw_1));
-		//temp_gap = temperature_raw_1 - temperature_raw_0;
-		//temp_gap = temperature_raw_1 - temperature_raw_0;
-		temp_gap = 2;
+		if(temperature_raw_0 < 0 && temperature_raw_1 > 0)
+		{
+			temp_gap =  (UINT16)((temperature_raw_0 * -1) + temperature_raw_1);
+		}
+		else if(temperature_raw_0 > 0 && temperature_raw_1 < 0)
+		{
+			temp_gap =  (UINT16)(temperature_raw_0 + (temperature_raw_1 * -1));
+		}
+		else
+		{
+			temp_gap = (UINT16)(MAX(temperature_raw_0,temperature_raw_1) - MIN(temperature_raw_0,temperature_raw_1));
+		}
+
 		//PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
 		switch(temp_gap)			
