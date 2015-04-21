@@ -157,7 +157,7 @@ void PRINTF(char *data, ...)
 {
 
 	va_list args;
-	char astr[80];
+	char astr[40];
 	char *p_str;
 
 	va_start(args, data);
@@ -180,14 +180,22 @@ void Init_System(void)
 
 	//보-레이트 115.2kbps,비동기식,패리티 없음,스탑 1bit,문자열 사이즈 8bit,상승 엣지 검출
 	//보-레이트 115.2kbps,비동기식,패리티 없음,스탑 1bit,문자열 사이즈 8bit,상승 엣지 검출
-	UBRR0H = 0;                        
-	UBRR0L = 10;                       
-	UCSR0A = 0x00;                     
-	UCSR0B = 0x98;                     
-	UCSR0C = 0x86;         
+	UBRR0H = 0;
+	UBRR0L = 10;
+	UCSR0A = 0x00;
+	UCSR0B = 0x98;
+	UCSR0C = 0x86;
+
+	TCCR0A = 0b10100011; // Fast PWM 8 Bit, Clear OCA0/OCB0 on Compare Match, Set on TOP
+	TCCR0B = 0b00000001; // Used no Prescaler
+	TCNT0 = 0;           // Reset TCNT0
+	OCR0A = 0;           // Initial the Output Compare register A & B
+	OCR0B = 0;
 
 
 	sei(); //Global interrupt enable
+
+	OCR0A = 255;
 
 }
 
@@ -300,60 +308,74 @@ int main(void)
 	{
 
 		
-		temperature_raw_0 = read_scratchpad(0);
-		temperature_raw_1 = read_scratchpad(1);
+		//temperature_raw_0 = read_scratchpad(0);
+		//temperature_raw_1 = read_scratchpad(1);
 
-		PRINTF("Temp0 : %u / Temp1 : %u\r\n", temperature_raw_0, temperature_raw_1);
+		//PRINTF("Temp0 : %u / Temp1 : %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
 		//NG
 		//- temperature should be very big number
-		temp_gap = (MAX(temperature_raw_0, temperature_raw_1) - MIN(temperature_raw_0, temperature_raw_1));
+		//temp_gap = (MAX(temperature_raw_0, temperature_raw_1) - MIN(temperature_raw_0, temperature_raw_1));
+		//temp_gap = temperature_raw_1 - temperature_raw_0;
+		//temp_gap = temperature_raw_1 - temperature_raw_0;
+		temp_gap = 2;
+		//PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
 		switch(temp_gap)			
 		{
 			case 0:
 				//do nothing
+				OCR0A = 0;
 			break;
 
 			case 1:
 				//do nothing
+				OCR0A = 0;
 			break;
 
 			case 2:
 				//PWM 15%
+				OCR0A = 38/2;
 			break;
 
 			case 3:
 				//PWM 25%
+				OCR0A = 63/2;
 			break;
 			
 			case 4:
 				//PWM 35%
+				OCR0A = 89/2;
 			break;
 
 			case 5:
 				//PWM 45%
+				OCR0A = 114/2;
 			break;
 			
 			case 6:
 				//PWM 55%
+				OCR0A = 140/2;
 			break;
 			
 			case 7:
 				//PWM 65%
+				OCR0A = 165/2;
 			break;
 
 			case 8:
 				//PWM 70%
+				OCR0A = 178/2;
 			break;
 
 
 			default:
 				//PWM 75%
+				OCR0A = 191/2;
 			break;
 			
 		}
-		
+		_delay_ms(100);
 			
 
 
