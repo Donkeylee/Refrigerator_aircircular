@@ -18,9 +18,22 @@
 #define WRITE      0x4E 
 #define EE_WRITE   0x48 
 #define READ_PS      0xB4
+#define UART_BUF_SIZE 16
+
+typedef	unsigned char		UINT8;
+typedef	unsigned int		UINT16;
+typedef	unsigned long		UINT32;
+
+#define	INVALID8	((UINT8) -1)
+#define	INVALID16	((UINT16) -1)
+#define	INVALID32	((UINT32) -1)
 
 volatile int length = 0;
-volatile char buffer[64] = {0};
+volatile char buffer[UART_BUF_SIZE] = {0};
+
+
+
+
 
 
 unsigned short w1_init(unsigned short); 
@@ -40,89 +53,95 @@ SIGNAL(SIG_USART_RECV);
 
 
 
-unsigned char reset (void) {
-    DDRC |= (1<<0);            //Ausgang
-	PORTC &= ~(1<<0);
-    _delay_us (480);
-	DDRC &= ~(1<<0);
-    _delay_us (80);
-	if (!(PINC & (1<<0))) {     //Pr?fe Slave-Antwort
-		_delay_us (450);
+UINT8 reset (UINT16 port) 
+{
+    DDRC |= (1 << port);            //Ausgang
+	PORTC &= ~(1 << port);
+    _delay_us(480);
+	DDRC &= ~(1 << port);
+    _delay_us(80);
+	if (!(PINC & (1 << port))) {     //Pr?fe Slave-Antwort
+		_delay_us(450);
         return 1;
 	}
     else
         return 0;
 }
 
-unsigned char read_bit (void) {
-    DDRC |= (1<<0);            //Ausgang
-	PORTC &= ~(1<<0);
-    _delay_us (1);
-	DDRC &= ~(1<<0);
-    _delay_us (12);
-    if (!(PINC & (1<<0)))       //Abtastung innerhalb von 15µs
+UINT8 read_bit (UINT16 port) 
+{
+    DDRC |= (1 << port);            //Ausgang
+	PORTC &= ~(1 << port);
+    _delay_us(1);
+	DDRC &= ~(1 << port);
+    _delay_us(12);
+    if (!(PINC & (1 << port)))       //Abtastung innerhalb von 15µs
         return 0;
     else
         return 1;
 }
 
-void write_bit (unsigned char bitval) {    //kann 0 oder 1 sein
-    DDRC |= (1<<0);            //Ausgang
-	PORTC &= ~(1<<0);
+void write_bit (unsigned char bitval, UINT16 port) {    //kann 0 oder 1 sein
+    DDRC |= (1 << port);            //Ausgang
+	PORTC &= ~(1 << port);
     if (bitval)
-        PORTC |= (1<<0);      //H-Pegel
+        PORTC |= (1 << port);      //H-Pegel
     _delay_us (110);        
-    DDRC &= ~(1<<0);
-    PORTC &= ~(1<<0);
+    DDRC &= ~(1 << port);
+    PORTC &= ~(1 << port);
 }
 
-unsigned char read_byte (void) {
+UINT8 read_byte (UINT16 port)
+{
     unsigned char byte = 0;
 	int i;
-    for (i=0; i<8; i++) {
-        if (read_bit ())
-            byte |= (1<<i);
-        _delay_us (120);
+    for (i=0 ; i < 8 ; i++) {
+        if (read_bit(port))
+            byte |= (1 << i);
+        _delay_us(120);
     }
     return byte;
 }
 
-void write_byte (unsigned char byte) {
+void write_byte (unsigned char byte, UINT16 port)
+{
 	int i;
 
-    for (i=0; i<8; i++) {
-        if (byte & (1<<i))
-          write_bit (1);
+    for (i=0 ; i < 8 ; i++) {
+        if (byte & (1 << i))
+          write_bit(1, port);
         else
-            write_bit (0);
+            write_bit(0, port);
 	}
-    _delay_us (120);
+    _delay_us(120);
 }  
 
-unsigned int read_scratchpad (void) {
+UINT16 read_scratchpad (UINT16 port)
+{
 	int scratchpad[9];
 	int i;
-	if (reset ()) {
-		write_byte (0xCC);
-		write_byte (0x44);
-		wait_ready ();
-		if (reset ()) {
-			write_byte (0xCC);
-			write_byte (0xBE);
+	if (reset(port))
+	{
+		write_byte(0xCC);
+		write_byte(0x44);
+		wait_ready(port);
+		if (reset(port))
+		{
+			write_byte(0xCC, port);
+			write_byte(0xBE, port);
 			for (i=0; i<9; i++)
-				scratchpad [i] = read_byte ();
-
-			//for (i=0; i<9; i++)
-				//PRINTF("scratchpad [%d] = \r\n", scratchpad[i]);
-
+			{
+				scratchpad [i] = read_byte(port);
+			}
+			
 			return (scratchpad[0] | scratchpad[1] << 8);
 		}
 	}
 	return 0;
 }
 
-void wait_ready (void) {
-	while (!(read_bit ()));
+void wait_ready (UINT16 port) {
+	while (!(read_bit(port)));
 }
 
 
@@ -271,9 +290,6 @@ int main(void)
 		int temperature_raw;
 		float temperature;
 		int target_temp = 43;
-
-		
-
 		
 		temperature_raw = read_scratchpad();
 
