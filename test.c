@@ -145,7 +145,7 @@ UINT16 read_scratchpad (UINT16 port)
 }
 
 void wait_ready (UINT16 port) {
-	while (!(read_bit(port)));
+	//while (!(read_bit(port)));
 }
 
 
@@ -157,7 +157,7 @@ void PRINTF(char *data, ...)
 {
 
 	va_list args;
-	char astr[40];
+	char astr[80];
 	char *p_str;
 
 	va_start(args, data);
@@ -176,6 +176,7 @@ void PRINTF(char *data, ...)
 void Init_System(void)
 {
 	DDRD = 0xFE;
+
 	//PORTD |= 0xC0;
 
 	//보-레이트 115.2kbps,비동기식,패리티 없음,스탑 1bit,문자열 사이즈 8bit,상승 엣지 검출
@@ -199,20 +200,20 @@ void Init_System(void)
 
 }
 
+#if 0
 
-void on_off(int port)
+int get_adc_value(UINT8 selected_adc)
 {
+	_delay_us(500);
+	ADMUX = selected_adc;
 
-		if(((PORTC >> port) & 0x1))
-	{
-		PORTD = PORTD & ~((1 << port) & 0xF); 
-	}
-	else
-	{
-		PORTD = PORTD | ((1 << port) & 0xF);
-	}
+	ADCSRA = 0xE7;
+	while(ADCSRA &&(1<<ADIF) == 0);
+
+	return ADC;
 }
 
+#endif
 void putch(char TX)
 {
 
@@ -238,17 +239,8 @@ void take_over(char recived_data)
 	if(buffer[length - 1] == 0x0D)
 	{
 
-		if(buffer[length - 2] == '?')
-		{
-			PRINTF("\r\nHELP ");
-			PRINTF("\r\n1. ");
-			PRINTF("\r\n2. ");
-			PRINTF("\r\n3. ");
-			PRINTF("\r\n4. ");
-			PRINTF("\r\n5. ");
-			PRINTF("\r\n6. ");			
-		}
-		else if(strstr(buffer, "t0") != 0)
+
+		if(strstr(buffer, "t0") != 0)
 		{
 			PRINTF("temperature = %d\r\n", read_scratchpad(0)/2);
 		}
@@ -256,11 +248,6 @@ void take_over(char recived_data)
 		{
 			PRINTF("temperature = %d\r\n", read_scratchpad(1)/2);
 		}
-		else if(strstr(buffer, "portd status") != 0)
-		{
-			PRINTF("\r\n");
-			PRINTF("PORTD= 0x%x\r\n", PORTD);
-		}		
 		else if(length == 1)
 		{
 			//do notthing
@@ -279,7 +266,7 @@ void take_over(char recived_data)
 		}
 		length = 0;		
 	}
-	else if(length >= 256)
+	else if(length >= UART_BUF_SIZE)
 	{
 		PRINTF("\r\nERROR ");
 		PRINTF("\r\nUART> ");
@@ -298,20 +285,23 @@ SIGNAL(SIG_USART_RECV)
 
 int main(void)
 {
-	int temperature_raw_0;
-	int temperature_raw_1;
+	int temperature_raw_0 = 0;
+	int temperature_raw_1 = 0;
 	UINT16 temp_gap;
 
 
 	Init_System();
+	//get_adc_value(2);// Required this.... i don't know why first time read ADC always 0???
+	
 	while(1)
 	{
 
-		
+		cli(); //Global interrupt Disable
 		temperature_raw_0 = read_scratchpad(0);
 		temperature_raw_1 = read_scratchpad(1);
+		sei(); //Global interrupt enable
 
-		//PRINTF("Temp0 : %u / Temp1 : %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
+		
 
 		if(temperature_raw_0 < 0 && temperature_raw_1 > 0)
 		{
@@ -325,6 +315,13 @@ int main(void)
 		{
 			temp_gap = (UINT16)(MAX(temperature_raw_0,temperature_raw_1) - MIN(temperature_raw_0,temperature_raw_1));
 		}
+
+		//temp_gap = 0;
+
+		//PRINTF("Temp0\r\n");
+//		PRINTF("Temp0 : %u / Temp1 : %u / gap %u / ADC %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap, get_adc_value(2));
+		//PRINTF("Temp0 : %u / Temp1 : %u / gap %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
+
 
 		//PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
@@ -341,47 +338,48 @@ int main(void)
 			break;
 
 			case 2:
-				//PWM 15%
+				//PWM 7.5%
 				OCR0A = 38/2;
 			break;
 
 			case 3:
-				//PWM 25%
+				//PWM 12.5%
 				OCR0A = 63/2;
 			break;
 			
 			case 4:
-				//PWM 35%
+				//PWM 17.5%
 				OCR0A = 89/2;
 			break;
 
 			case 5:
-				//PWM 45%
+				//PWM 22.5%
 				OCR0A = 114/2;
 			break;
 			
 			case 6:
-				//PWM 55%
+				//PWM 25.25%
 				OCR0A = 140/2;
 			break;
 			
 			case 7:
-				//PWM 65%
+				//PWM 32.5%
 				OCR0A = 165/2;
 			break;
 
 			case 8:
-				//PWM 70%
+				//PWM 35%
 				OCR0A = 178/2;
 			break;
 
 
 			default:
-				//PWM 75%
-				OCR0A = 191/2;
+				//PWM 40%
+				OCR0A = 102;
 			break;
 			
 		}
+		//OCR0A = 255;
 		_delay_ms(100);
 			
 
