@@ -196,7 +196,7 @@ void Init_System(void)
 
 	sei(); //Global interrupt enable
 
-	OCR0A = 255;
+	//OCR0A = 255;
 
 }
 
@@ -296,10 +296,10 @@ int main(void)
 	while(1)
 	{
 
-		cli(); //Global interrupt Disable
+		//cli(); //Global interrupt Disable
 		temperature_raw_0 = read_scratchpad(0);
 		temperature_raw_1 = read_scratchpad(1);
-		sei(); //Global interrupt enable
+		//sei(); //Global interrupt enable
 
 		
 
@@ -316,14 +316,7 @@ int main(void)
 			temp_gap = (UINT16)(MAX(temperature_raw_0,temperature_raw_1) - MIN(temperature_raw_0,temperature_raw_1));
 		}
 
-		//temp_gap = 0;
-
-		//PRINTF("Temp0\r\n");
-//		PRINTF("Temp0 : %u / Temp1 : %u / gap %u / ADC %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap, get_adc_value(2));
-		//PRINTF("Temp0 : %u / Temp1 : %u / gap %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
-
-
-		//PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
+		PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
 
 		switch(temp_gap)			
 		{
@@ -380,7 +373,7 @@ int main(void)
 			
 		}
 		//OCR0A = 255;
-		_delay_ms(100);
+		_delay_ms(200);
 			
 
 
