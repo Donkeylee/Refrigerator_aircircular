@@ -32,6 +32,15 @@ typedef	unsigned long		UINT32;
 #define	INVALID16	((UINT16) -1)
 #define	INVALID32	((UINT32) -1)
 
+
+#define CLOSED 0
+#define OPEN 1
+
+#define FALSE 0
+#define TRUE 1
+
+
+
 volatile int length = 0;
 volatile char buffer[UART_BUF_SIZE] = {0};
 
@@ -200,7 +209,7 @@ void Init_System(void)
 
 }
 
-#if 0
+#if 1
 
 int get_adc_value(UINT8 selected_adc)
 {
@@ -288,6 +297,9 @@ int main(void)
 	int temperature_raw_0 = 0;
 	int temperature_raw_1 = 0;
 	UINT16 temp_gap;
+	UINT16 adc_val;
+	UINT16 door = CLOSED;
+	UINT16 need_blow = FALSE;
 
 
 	Init_System();
@@ -299,7 +311,38 @@ int main(void)
 		//cli(); //Global interrupt Disable
 		temperature_raw_0 = read_scratchpad(0);
 		temperature_raw_1 = read_scratchpad(1);
+		adc_val = get_adc_value(2);
 		//sei(); //Global interrupt enable
+
+		if(adc_val < 50)
+		{
+			door = CLOSED;
+		}
+		else
+		{
+			need_blow = TRUE;
+			door = OPEN;			
+		}
+
+
+		if(need_blow == TRUE && door == CLOSED)
+		{
+			UINT16 sec;
+			need_blow = FALSE;
+			//PWM 40%
+			
+			OCR0A = 50;
+
+			for(sec = 0 ; sec < 1500 ; sec++)
+			{
+				adc_val = get_adc_value(2);
+				if(adc_val > 50)
+					break;
+				_delay_ms(10);
+			}
+		}
+
+		
 
 		
 
@@ -315,63 +358,69 @@ int main(void)
 		{
 			temp_gap = (UINT16)(MAX(temperature_raw_0,temperature_raw_1) - MIN(temperature_raw_0,temperature_raw_1));
 		}
+		
+		
 
-		PRINTF("Temp0 : %u / Temp1 : %u = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap);
+		PRINTF("Temp0 : %u / Temp1 : %u = %u / ADC = %u\r\n", temperature_raw_0, temperature_raw_1, temp_gap, adc_val);
 
-		switch(temp_gap)			
+		if(door == CLOSED)
 		{
-			case 0:
-				//do nothing
-				OCR0A = 0;
-			break;
+			switch(temp_gap)			
+			{
+				case 0:
+					//do nothing
+					OCR0A = 0;
+				break;
 
-			case 1:
-				//do nothing
-				OCR0A = 0;
-			break;
+				case 1:
+					//do nothing
+					OCR0A = 0;
+				break;
 
-			case 2:
-				//PWM 7.5%
-				OCR0A = 38/2;
-			break;
+				case 2:
+					//PWM 7.5%
+					OCR0A = 38/2;
+				break;
 
-			case 3:
-				//PWM 12.5%
-				OCR0A = 63/2;
-			break;
-			
-			case 4:
-				//PWM 17.5%
-				OCR0A = 89/2;
-			break;
+				case 3:
+					//PWM 12.5%
+					OCR0A = 63/2;
+				break;
+				
+				case 4:
+					//PWM 17.5%
+					OCR0A = 89/2;
+				break;
 
-			case 5:
-				//PWM 22.5%
-				OCR0A = 114/2;
-			break;
-			
-			case 6:
-				//PWM 25.25%
-				OCR0A = 140/2;
-			break;
-			
-			case 7:
-				//PWM 32.5%
-				OCR0A = 165/2;
-			break;
+				case 5:
+					//PWM 22.5%
+					OCR0A = 114/2;
+				break;
+				
+				case 6:
+					//PWM 25.25%
+					OCR0A = 140/2;
+				break;
+				
+				case 7:
+					//PWM 32.5%
+					OCR0A = 165/2;
+				break;
 
-			case 8:
-				//PWM 35%
-				OCR0A = 178/2;
-			break;
+				case 8:
+					//PWM 35%
+					OCR0A = 178/2;
+				break;
 
 
-			default:
-				//PWM 40%
-				OCR0A = 102;
-			break;
-			
+				default:
+					//PWM 40%
+					OCR0A = 102;
+				break;
+				
+			}
 		}
+
 		//OCR0A = 255;
 		_delay_ms(200);
 			
