@@ -9,7 +9,9 @@
 
 #define SKIP_ROM   0xCC 
 
-#define F_CPU 20000000UL
+//#define F_CPU 20000000UL
+#define F_CPU 11059200UL
+
 #include <util/delay.h> 
 
 
@@ -300,6 +302,7 @@ int main(void)
 	UINT16 adc_val;
 	UINT16 door = CLOSED;
 	UINT16 need_blow = FALSE;
+	UINT16 sec;
 
 
 	Init_System();
@@ -321,19 +324,19 @@ int main(void)
 		else
 		{
 			need_blow = TRUE;
-			door = OPEN;			
+			door = OPEN;
+			OCR0A = 0;
 		}
 
 
 		if(need_blow == TRUE && door == CLOSED)
 		{
-			UINT16 sec;
 			need_blow = FALSE;
 			//PWM 40%
 			
-			OCR0A = 50;
+			OCR0A = 80;
 
-			for(sec = 0 ; sec < 1500 ; sec++)
+			for(sec = 0 ; sec < 6000 ; sec++)
 			{
 				adc_val = get_adc_value(2);
 				if(adc_val > 50)
@@ -379,43 +382,43 @@ int main(void)
 
 				case 2:
 					//PWM 7.5%
-					OCR0A = 38/2;
+					OCR0A = 30;
 				break;
 
 				case 3:
 					//PWM 12.5%
-					OCR0A = 63/2;
+					OCR0A = 40;
 				break;
 				
 				case 4:
 					//PWM 17.5%
-					OCR0A = 89/2;
+					OCR0A = 50;
 				break;
 
 				case 5:
 					//PWM 22.5%
-					OCR0A = 114/2;
+					OCR0A = 70;
 				break;
 				
 				case 6:
 					//PWM 25.25%
-					OCR0A = 140/2;
+					OCR0A = 80;
 				break;
 				
 				case 7:
 					//PWM 32.5%
-					OCR0A = 165/2;
+					OCR0A = 90;
 				break;
 
 				case 8:
 					//PWM 35%
-					OCR0A = 178/2;
+					OCR0A = 100;
 				break;
 
 
 				default:
 					//PWM 40%
-					OCR0A = 102;
+					OCR0A = 120;
 				break;
 				
 			}
